@@ -50,7 +50,7 @@ h2{font-size:16px;margin:20px 0 4px;color:#b45309}.sum{background:#fff;border-le
       if (c >= '0' && c <= '9') out += c;
       else if (s.digits[c] !== undefined) out += s.digits[c];
       else if (c === s.decimal) { if (seenDec) return { ok: false, why: 'two decimal separators' }; seenDec = true; out += '.'; }
-      else if (sameGroup(c, s.group)) { /* dropped */ }
+      else if (sameGroup(c, s.group)) { if (seenDec) return { ok: false, why: 'group separator after the decimal separator' }; }
       else return { ok: false, why: 'unexpected "' + c + '"' };
     }
     if (!/\d/.test(out)) return { ok: false, why: 'no digits' };
@@ -64,6 +64,7 @@ h2{font-size:16px;margin:20px 0 4px;color:#b45309}.sum{background:#fff;border-le
   var api = { LOCALES: LOCALES, symbols: symbols, parse: parse, all: all, summary: summary };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.GroupWhy = api;
 })(typeof window !== 'undefined' ? window : this);
+
 
 var P=['1,234','1.234','1,234.5','1.234,5',"1'234.50",'12,34,567.891','1 234,5','1234,5','\u0661\u0662\u0663\u0664\u066b\u0665'];
 function esc(s){return String(s).replace(/[&<>]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;'}[c]})}
