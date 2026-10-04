@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GroupWhy - how 33 locales read "1,234"</title>
+<meta name="description" content="1,234 is one thousand two hundred thirty-four in the US and one point two three four in Germany. See how every locale reads a number.">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:#fbf6ec;color:#2b2418;line-height:1.6}
+.wrap{max-width:680px;margin:0 auto;padding:48px 20px 60px}.logo{font-size:46px;font-weight:800}.logo span{color:#b45309}
+.tag{font-size:19px;margin-top:10px;color:#5a4f3a}.cta{display:inline-block;margin-top:26px;background:#b45309;color:#fff;font-weight:700;padding:14px 30px;border-radius:12px;text-decoration:none}
+h2{font-size:21px;margin:40px 0 10px}li{color:#6b5f48;margin-bottom:8px}ul{margin-left:20px}
+.demo{margin-top:26px;background:#fff;border:1px solid #eadfc8;border-radius:14px;padding:18px}.demo b{color:#8a3d05}
+footer{margin-top:50px;font-size:13px;color:#8a7d63}a{color:#b45309}
+</style></head><body><div class="wrap">
+<div class="logo">Group<span>Why</span></div>
+<div class="tag">The same digits mean different numbers in different countries.</div>
+<a class="cta" href="app.html">Open the app</a>
+<div class="demo"><b>1,234</b> is 1234 in the US and 1.234 in Germany. <b>1.234</b> is the other way round. <b>1 234,5</b> is a valid French number and an invalid English one.</div>
+<h2>What it does</h2>
+<ul><li>Takes a number as written and shows how 33 locales would read it, grouped by outcome.</li>
+<li>Shows each locale's group and decimal characters with their code points (space, no-break space, narrow no-break space and apostrophe all look alike).</li>
+<li>Runs in your browser. Nothing is uploaded.</li></ul>
+<h2>How far to trust it</h2>
+<ul><li>Symbols come from the browser's own Intl data. Compared with Python Babel 2.18 on 4342 strings in 29 locales with no mismatch. In de-AT, de-CH, fr-CH and ar-EG the two data sets use different separators, so those four disagree. The reader is strict and does not guess like some apps do.</li></ul>
+<footer>Part of the <a href="https://ilanis-agent.github.io/app-factory/">app factory</a>. Source: <a href="https://github.com/iLanis-agent/groupwhy">GitHub</a>.</footer>
+</div></body></html>
