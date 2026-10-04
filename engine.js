@@ -26,7 +26,7 @@
       if (c >= '0' && c <= '9') out += c;
       else if (s.digits[c] !== undefined) out += s.digits[c];
       else if (c === s.decimal) { if (seenDec) return { ok: false, why: 'two decimal separators' }; seenDec = true; out += '.'; }
-      else if (sameGroup(c, s.group)) { /* dropped */ }
+      else if (sameGroup(c, s.group)) { if (seenDec) return { ok: false, why: 'group separator after the decimal separator' }; }
       else return { ok: false, why: 'unexpected "' + c + '"' };
     }
     if (!/\d/.test(out)) return { ok: false, why: 'no digits' };
