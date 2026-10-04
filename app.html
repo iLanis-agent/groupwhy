@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GroupWhy app - how 33 locales read "1,234"</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:#fbf6ec;color:#2b2418;line-height:1.5}
+.wrap{max-width:860px;margin:0 auto;padding:28px 16px 50px}
+h1{font-size:28px}h1 span{color:#b45309}.sub{color:#6b5f48;margin:6px 0 14px}
+input{width:100%;background:#fff;color:#2b2418;border:1px solid #d9cdb2;border-radius:10px;padding:11px;font:18px ui-monospace,Menlo,Consolas,monospace}
+label{display:block;font-size:13px;color:#6b5f48;margin:12px 0 4px}
+.pre button{background:#fff;color:#b45309;border:1px solid #e8c9a0;border-radius:20px;padding:6px 12px;margin:0 6px 6px 0;cursor:pointer;font-size:13px}
+table{width:100%;border-collapse:collapse;margin-top:10px;font-size:14px}th,td{text-align:left;padding:6px 8px;border-bottom:1px solid #eadfc8;vertical-align:top}th{color:#6b5f48;font-weight:600}
+code{font-family:ui-monospace,Menlo,Consolas,monospace;color:#8a3d05;background:#f6e8d2;padding:0 3px;border-radius:3px}.err{color:#b42318}
+h2{font-size:16px;margin:20px 0 4px;color:#b45309}.sum{background:#fff;border-left:3px solid #b45309;padding:8px 12px;margin:8px 0;border-radius:6px;font-size:14px}.foot{color:#8a7d63;font-size:13px;margin-top:18px}a{color:#b45309}
+</style></head><body><div class="wrap">
+<h1>Group<span>Why</span></h1>
+<div class="sub">Type a number the way you see it written. See what 33 locales think it means: which character they use to group digits, which for decimals, and the value they read.</div>
+<div class="pre" id="pre"></div>
+<label for="in">Number as written</label><input id="in" type="text" spellcheck="false" autocomplete="off">
+<div id="out"></div>
+<div class="foot">Separators come from your browser's Intl (CLDR) locale data, so a different browser version can show different symbols. This is a strict reader: only that locale's own group and decimal characters (plus matching space and apostrophe variants) are accepted, so "1.5" is invalid in German instead of being guessed. Many real apps are more lenient. Digit systems: only each locale's default digits are read (Arabic-Indic for ar-EG). Not covered: currency symbols, percent, exponent form. Runs in your browser; nothing is uploaded.</div>
+<div class="foot">Part of the <a href="https://ilanis-agent.github.io/app-factory/">app factory</a>. Source: <a href="https://github.com/iLanis-agent/groupwhy">GitHub</a>.</div>
+</div>
+<script>
+(function (root) {
+  'use strict';
+  // Reads "1,234" the way each locale would, using the separators the runtime's Intl data (CLDR) gives for that locale.
+  var LOCALES = ['en-US', 'en-GB', 'en-IN', 'de-DE', 'de-CH', 'de-AT', 'fr-FR', 'fr-CH', 'fr-CA', 'es-ES', 'es-MX', 'it-IT', 'pt-BR', 'pt-PT', 'nl-NL', 'sv-SE', 'nb-NO', 'da-DK', 'fi-FI', 'pl-PL', 'cs-CZ', 'ru-RU', 'uk-UA', 'tr-TR', 'el-GR', 'he-IL', 'ar-EG', 'hi-IN', 'ja-JP', 'zh-CN', 'ko-KR', 'id-ID', 'vi-VN'];
+  var cache = {};
+  function symbols(loc) {
+    if (cache[loc]) return cache[loc];
+    var nf = new Intl.NumberFormat(loc, { useGrouping: true, minimumFractionDigits: 1 });
+    var parts = nf.formatToParts(-12345678.9), g = '', d = '', minus = '-';
+    parts.forEach(function (p) { if (p.type === 'group') g = g || p.value; if (p.type === 'decimal') d = p.value; if (p.type === 'minusSign') minus = p.value; });
+    var zero = nf.format(0).charAt(0), digits = {};
+    var nf2 = new Intl.NumberFormat(loc, { useGrouping: false });
+    for (var i = 0; i < 10; i++) digits[nf2.format(i)] = String(i);
+    var ex = new Intl.NumberFormat(loc).format(1234.5), min = new Intl.NumberFormat(loc).format(1234).length === 4 || !/[^\p{Nd}]/u.test(new Intl.NumberFormat(loc).format(1234));
+    return (cache[loc] = { group: g, decimal: d, minus: minus, digits: digits, example: ex, minGrouping2: min });
+  }
+  function isSpace(c) { return c === ' ' || c === '\u00a0' || c === '\u202f' || c === '\u2009'; }
+  function sameGroup(c, g) { return c === g || (isSpace(c) && isSpace(g)) || ((c === "'" || c === '\u2019' || c === '\u02bc') && (g === "'" || g === '\u2019' || g === '\u02bc')); }
+  function parse(str, loc) {
+    var s = symbols(loc), t = String(str).trim(), out = '', seenDec = false, i, c;
+    if (!t) return { ok: false, why: 'empty' };
+    var sign = '';
+    if (t[0] === '-' || t[0] === '+' || t[0] === s.minus) { sign = t[0] === '+' ? '' : '-'; t = t.slice(1); }
+    for (i = 0; i < t.length; i++) {
+      c = t[i];
+      if (c >= '0' && c <= '9') out += c;
+      else if (s.digits[c] !== undefined) out += s.digits[c];
+      else if (c === s.decimal) { if (seenDec) return { ok: false, why: 'two decimal separators' }; seenDec = true; out += '.'; }
+      else if (sameGroup(c, s.group)) { /* dropped */ }
+      else return { ok: false, why: 'unexpected "' + c + '"' };
+    }
+    if (!/\d/.test(out)) return { ok: false, why: 'no digits' };
+    return { ok: true, value: sign + out, group: s.group, decimal: s.decimal };
+  }
+  function all(str) { return LOCALES.map(function (l) { var r = parse(str, l); r.locale = l; return r; }); }
+  function summary(str) {
+    var by = {}; all(str).forEach(function (r) { var k = r.ok ? String(Number(r.value)) : 'invalid'; (by[k] = by[k] || []).push(r.locale); });
+    return by;
+  }
+  var api = { LOCALES: LOCALES, symbols: symbols, parse: parse, all: all, summary: summary };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.GroupWhy = api;
+})(typeof window !== 'undefined' ? window : this);
+
+var P=['1,234','1.234','1,234.5','1.234,5',"1'234.50",'12,34,567.891','1 234,5','1234,5','\u0661\u0662\u0663\u0664\u066b\u0665'];
+function esc(s){return String(s).replace(/[&<>]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;'}[c]})}
+function cp(c){return c?'U+'+c.codePointAt(0).toString(16).toUpperCase().padStart(4,'0'):''}
+function vis(c){return c==='\u00a0'?'NBSP':c==='\u202f'?'narrow NBSP':c===' '?'space':c}
+var I=document.getElementById('in'),out=document.getElementById('out');
+function run(){var v=I.value;if(!v.trim()){out.innerHTML='';return}var rs=GroupWhy.all(v),by=GroupWhy.summary(v),h='<h2>Summary</h2>';
+ Object.keys(by).forEach(function(k){h+='<div class="sum"><b>'+(k==='invalid'?'Not a valid number':'Reads as '+esc(k))+'</b> in '+by[k].length+': '+esc(by[k].join(', '))+'</div>'});
+ h+='<h2>Per locale</h2><table><thead><tr><th>Locale</th><th>Group</th><th>Decimal</th><th>Reads as</th></tr></thead><tbody>'+rs.map(function(r){var s=GroupWhy.symbols(r.locale);return'<tr><td>'+r.locale+'</td><td><code>'+esc(vis(s.group))+'</code> <small>'+cp(s.group)+'</small></td><td><code>'+esc(s.decimal)+'</code></td><td>'+(r.ok?'<code>'+esc(r.value)+'</code>':'<span class="err">invalid ('+esc(r.why)+')</span>')+'</td></tr>'}).join('')+'</tbody></table>';
+ out.innerHTML=h}
+I.addEventListener('input',run);
+var pre=document.getElementById('pre');P.forEach(function(k){var b=document.createElement('button');b.textContent=k;b.onclick=function(){I.value=k;run()};pre.appendChild(b)});
+I.value=P[0];run();
+</script></body></html>
